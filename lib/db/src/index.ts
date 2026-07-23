@@ -4,13 +4,20 @@ import * as schema from "./schema";
 
 const { Pool } = pg;
 
-if (!process.env.DATABASE_URL) {
+// SUPABASE_DATABASE_URL takes priority (production), falls back to Replit-managed DATABASE_URL (dev)
+const dbUrl = process.env.SUPABASE_DATABASE_URL ?? process.env.DATABASE_URL;
+
+if (!dbUrl) {
   throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+    "SUPABASE_DATABASE_URL or DATABASE_URL must be set.",
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const sslConfig = process.env.SUPABASE_DATABASE_URL
+  ? { rejectUnauthorized: false }
+  : undefined;
+
+export const pool = new Pool({ connectionString: dbUrl, ssl: sslConfig });
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
